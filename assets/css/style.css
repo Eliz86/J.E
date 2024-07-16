@@ -812,14 +812,13 @@ td {
     padding: 10px;
     border-radius: var(--border-radius-md);
   }
-  
-  
+
   /*-----------------------------------*\
     #BANNER
   \*-----------------------------------*/
 
   /* General Styles */
-  .header-content {
+.header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -885,15 +884,7 @@ td {
   background: var(--eerie-black);
 }
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex: 1;
-  padding: 0 200px;
-}
-
-/* Mobile Styles */
+/* Estilos móviles */
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -911,6 +902,7 @@ td {
     text-align: center;
   }
 }
+
   
   
   /*-----------------------------------*\
