@@ -169,3 +169,249 @@ const showcaseCloseFunc = function () {
 
 // Añadir el eventListener al botón de cerrar
 showcaseCloseBtn.addEventListener('click', showcaseCloseFunc);
+
+const commentForm = document.getElementById('commentForm');
+const commentsContainer = document.getElementById('commentsList');
+const commentCountElement = document.getElementById('commentCount');
+const formFeedback = document.getElementById('formFeedback');
+
+loadComments();
+
+commentForm.addEventListener('submit', function (event) {
+  event.preventDefault();
+  const name = document.getElementById('name').value;
+  const message = document.getElementById('message').value;
+  const email = document.getElementById('email').value;
+  const formFeedback = document.getElementById('formFeedback');
+
+  if (!name || !message || !email) {
+    formFeedback.textContent = "Todos los campos son obligatorios.";
+    document.querySelectorAll('.input-field').forEach(field => {
+        if (!field.value) {
+            field.style.border = '1px solid red';
+        } else {
+            field.style.border = '1px solid #ddd';
+        }
+    });
+    return;
+}
+
+  const comment = {
+    id: Date.now(),
+    name,
+    message,
+    email,
+    date: new Date().toLocaleString(),
+    replies: []
+  };
+
+  saveComment(comment);
+  addCommentToPage(comment);
+  commentForm.reset();
+  formFeedback.textContent = "Comentario enviado exitosamente";
+  formFeedback.classList.add('success-feedback', 'show');
+  updateCommentCount(); 
+
+  setTimeout(() => {
+    formFeedback.classList.remove('show');
+  }, 3000); // El mensaje desaparece después de 3 segundos
+});
+
+function saveComment(comment) {
+  let comments = localStorage.getItem('comments');
+  comments = comments ? JSON.parse(comments) : [];
+  comments.push(comment);
+  localStorage.setItem('comments', JSON.stringify(comments));
+  updateCommentCount();
+}
+
+function loadComments() {
+  let comments = localStorage.getItem('comments');
+  if (comments) {
+    comments = JSON.parse(comments);
+    comments.forEach(comment => addCommentToPage(comment));
+    updateCommentCount();
+  }
+}
+
+function addCommentToPage(comment, parentElement = commentsContainer) {
+  const isOwner = comment.email === 'elizabeth4756l@gmail.com';
+  const commentElement = document.createElement('div');
+  commentElement.classList.add('comment');
+  if (isOwner) {
+    commentElement.classList.add('comment-owner');
+  }
+  commentElement.dataset.id = comment.id;
+  commentElement.innerHTML = `
+    <small>${comment.date}</small>
+    <h4>${comment.name}</h4>
+    <p>${comment.message}</p>
+    <div class="comment-actions">
+      <button class="reply-btn">Responder</button>
+      <button class="delete-btn">Eliminar</button>
+      <button class="show-replies-btn" data-replies-count="${comment.replies.length}">
+          ${comment.replies.length} respuestas
+      </button>
+    </div>
+    <div class="comment-replies"></div>
+  `;
+  parentElement.appendChild(commentElement);
+
+  const replyBtn = commentElement.querySelector('.reply-btn');
+  const deleteBtn = commentElement.querySelector('.delete-btn');
+  const showRepliesBtn = commentElement.querySelector('.show-replies-btn');
+  const repliesContainer = commentElement.querySelector('.comment-replies');
+
+  replyBtn.addEventListener('click', () => {
+    const replyForm = createReplyForm(comment.id);
+    commentElement.appendChild(replyForm);
+  });
+
+  deleteBtn.addEventListener('click', () => {
+    deleteComment(comment.id);
+    commentElement.remove();
+    updateCommentCount(); // Asegúrate de llamar a la función para actualizar el contador
+});
+
+
+  // Función para manejar el despliegue de respuestas y actualizar el texto del botón
+  showRepliesBtn.addEventListener('click', () => {
+    repliesContainer.classList.toggle('active');
+  });
+  
+  comment.replies.forEach(reply => addCommentToPage(reply, repliesContainer));
+}
+
+function updateRepliesCount(commentId) {
+  let commentElement = document.querySelector(`.comment[data-id="${commentId}"]`);
+  let showRepliesBtn = commentElement.querySelector('.show-replies-btn');
+  let repliesCount = parseInt(showRepliesBtn.getAttribute('data-replies-count')) + 1;
+  showRepliesBtn.setAttribute('data-replies-count', repliesCount);
+  showRepliesBtn.textContent = `${repliesCount} respuestas`;
+}
+
+function createReplyForm(commentId) {
+  const replyForm = document.createElement('form');
+  replyForm.classList.add('reply-form');
+  replyForm.innerHTML = `
+    <div class="input-wrapper">
+      <label for="replyName">Tu nombre*</label>
+      <input type="text" name="replyName" placeholder="Tu nombre" required class="input-field">
+    </div>
+    <div class="input-wrapper">
+      <label for="replyEmail">Tu correo electrónico*</label>
+      <input type="email" name="replyEmail" placeholder="Tu correo electrónico" required class="input-field">
+    </div>
+    <div class="input-wrapper">
+      <label for="replyMessage">Respuesta*</label>
+      <textarea name="replyMessage" placeholder="Escriba su respuesta" required class="input-field"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">
+      <span>Responder</span>
+      <ion-icon name="send-outline"></ion-icon>
+    </button>
+  `;
+
+  replyForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    const replyName = replyForm.querySelector('input[name="replyName"]').value;
+    const replyEmail = replyForm.querySelector('input[name="replyEmail"]').value;
+    const replyMessage = replyForm.querySelector('textarea[name="replyMessage"]').value;
+
+    const reply = {
+      id: Date.now(),
+      name: replyName,
+      email: replyEmail,
+      message: replyMessage,
+      date: new Date().toLocaleString(),
+      replies: []
+    };
+
+    addReply(commentId, reply);
+    replyForm.remove();
+  });
+
+  return replyForm;
+}
+
+function addReply(commentId, reply) {
+  let comments = JSON.parse(localStorage.getItem('comments'));
+
+  function findComment(comments, commentId) {
+    for (let comment of comments) {
+      if (comment.id === commentId) {
+        return comment;
+      }
+      if (comment.replies.length > 0) {
+        let found = findComment(comment.replies, commentId);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  let parentComment = findComment(comments, commentId);
+    if (parentComment) {
+        parentComment.replies.push(reply);
+        localStorage.setItem('comments', JSON.stringify(comments));
+        
+        // Añadir respuesta a la página de forma instantánea
+        let parentElement = document.querySelector(`.comment[data-id="${commentId}"] .comment-replies`);
+        addCommentToPage(reply, parentElement);
+        
+        // Actualizar contador de respuestas instantáneamente
+        updateRepliesCount(commentId);
+    }
+}
+
+// En la función deleteComment, llama a updateRepliesCount() si eliminas un comentario con respuestas.
+function deleteComment(commentId) {
+  let comments = JSON.parse(localStorage.getItem('comments'));
+
+  function removeComment(comments, commentId) {
+    return comments.filter(comment => {
+      if (comment.id === commentId) {
+        return false; // Eliminar el comentario encontrado
+      }
+      // Si el comentario tiene respuestas, eliminarlas recursivamente
+      comment.replies = removeComment(comment.replies, commentId);
+      return true;
+    });
+  }
+
+  comments = removeComment(comments, commentId);
+  localStorage.setItem('comments', JSON.stringify(comments));
+
+  // Actualiza el número de comentarios después de la eliminación
+  updateCommentCount();
+}
+
+// Corrige el total de comentarios y respuestas en la función updateCommentCount
+function updateCommentCount() {
+  const comments = JSON.parse(localStorage.getItem('comments')) || [];
+
+  // Contar todos los comentarios y respuestas recursivamente
+  function countAllComments(comments) {
+    let count = 0;
+    comments.forEach(comment => {
+      count++;
+      count += countAllComments(comment.replies); // Sumar respuestas
+    });
+    return count;
+  }
+
+  const totalComments = countAllComments(comments); 
+  commentCountElement.textContent = `Número de comentarios: ${totalComments}`; // Actualizar el DOM
+}
+
+
+function updateRepliesCount(commentId) {
+  let commentElement = document.querySelector(`.comment[data-id="${commentId}"]`);
+  let showRepliesBtn = commentElement.querySelector('.show-replies-btn');
+  let repliesCount = parseInt(showRepliesBtn.getAttribute('data-replies-count')) + 1;
+  showRepliesBtn.setAttribute('data-replies-count', repliesCount);
+  showRepliesBtn.textContent = `${repliesCount} respuestas`;
+  updateCommentCount();
+}
+
+    
