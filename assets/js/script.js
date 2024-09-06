@@ -9,6 +9,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const carrito = document.querySelector("#carrito");
     const heartButton = document.getElementById("heart-button");
     const countDisplay = heartButton.querySelector('.count');
+    const togglePanel = document.getElementById("toggleMessage");
+    const originalContent = togglePanel.innerHTML;
+    const newContent = `
+      <h1>Bienvenido, tu tienda te espera.</h1>
+      <p>Estamos aquí para ofrecerte la mejor ayuda, tu opinión y experiencia es muy importante para nosotros. 
+      Por favor, comparte tus comentarios para ayudarnos a mejorar y brindarte un mejor servicio. ¡Gracias por tu colaboración!</p>
+      <a href="https://wa.me/573128462035" target="_blank" class="primary"> CONTÁCTENOS</a>
+    `;
+
+    togglePanel.addEventListener("mouseenter", function() {
+        togglePanel.innerHTML = newContent;
+    });
+
+    togglePanel.addEventListener("mouseleave", function() {
+        togglePanel.innerHTML = originalContent;
+    });
+
 
     // Contador de elementos en el carrito
     let cartItemCount = 0;
@@ -166,9 +183,6 @@ const showcaseSection = document.querySelector('.product-showcase');
 const showcaseCloseFunc = function () {
   showcaseSection.classList.add('closed');
 };
-
-// Añadir el eventListener al botón de cerrar
-showcaseCloseBtn.addEventListener('click', showcaseCloseFunc);
 
 const commentForm = document.getElementById('commentForm');
 const commentsContainer = document.getElementById('commentsList');
